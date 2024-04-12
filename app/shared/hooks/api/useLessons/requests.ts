@@ -8,7 +8,6 @@ import {
 } from '@/app/shared/hooks/api/useLessons/types';
 import { GET_LESSONS } from '@/app/shared/hooks/api/useLessons/constants';
 import { LessonBody } from '@/app/(pages)/lessons/components/LessonModal/types';
-import { GET_USERS } from '@/app/shared/hooks/api/useUsers/constants';
 import { Key } from 'react';
 
 export const fetchLessons = async (filters?: Filters) => {

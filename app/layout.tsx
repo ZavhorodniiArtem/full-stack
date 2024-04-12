@@ -6,7 +6,7 @@ import StyledComponentsRegistry from '@/app/lib/registry';
 import Sidebar from '@/app/shared/components/Sidebar';
 import { Flex } from 'antd';
 import './globals.css';
-import { SessionProvider } from 'next-auth/react';
+import { AuthProvider } from '@/providers/AuthProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html>
-      <SessionProvider>
+      <AuthProvider>
         <TanstackProvider>
           <StyledComponentsRegistry>
             <body className={inter.className}>
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </body>
           </StyledComponentsRegistry>
         </TanstackProvider>
-      </SessionProvider>
+      </AuthProvider>
     </html>
   );
 }

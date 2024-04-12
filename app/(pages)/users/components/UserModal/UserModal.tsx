@@ -67,6 +67,17 @@ const UserModal = ({ isEdit, isOpen, handleClose }: UserModalProps) => {
           <Input />
         </Form.Item>
 
+        <Form.Item
+          name='password'
+          label='Password'
+          rules={[
+            { required: true, message: 'Email is required!' },
+            { max: 50, message: 'Max length 100 characters!' },
+          ]}
+        >
+          <Input.Password />
+        </Form.Item>
+
         <Flex gap={16} justify='end'>
           <Button onClick={handleClose}>Cancel</Button>
           <Button type='primary' htmlType='submit'>

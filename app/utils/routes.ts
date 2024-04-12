@@ -1,5 +1,5 @@
 export enum Routes {
   USERS = '/users',
   LESSONS = '/lessons',
-  LOGIN = '/login',
+  SIGN_IN = '/api/auth/signin',
 }

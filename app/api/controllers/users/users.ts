@@ -3,18 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { UserBody } from '@/app/(pages)/users/components/UserModal/types';
 import { UserResponse } from '@/app/shared/hooks/api/useUsers/types';
 import { IUsersResponse } from '@/app/api/(routes)/users/types';
-import { Params } from './constants';
+import { extractAndValidateParams } from '@/app/api/services/extractAndValidateParams/extractAndValidateParams';
 
 export const usersController = {
   async fetchUsers(req: NextRequest) {
     try {
-      const params = {
-        search: req.nextUrl.searchParams.get(Params.SEARCH),
-        order: req.nextUrl.searchParams.get(Params.ORDER),
-        field: req.nextUrl.searchParams.get(Params.FIELD),
-        pageSize: Number(req.nextUrl.searchParams.get(Params.PAGE_SIZE)),
-        page: Number(req.nextUrl.searchParams.get(Params.PAGE)),
-      };
+      const params = extractAndValidateParams(req);
 
       const users = await userService().getAllUsers(params);
 
@@ -26,10 +20,10 @@ export const usersController = {
   },
 
   async createUser(req: NextRequest) {
-    const { name, email }: UserBody = (await req.json()) as UserBody;
+    const { name, email, password }: UserBody = (await req.json()) as UserBody;
 
     try {
-      if (!name || !email) {
+      if (!name || !email || !password) {
         return NextResponse.json(
           { error: 'Name and email are required' },
           { status: 400 }
@@ -39,6 +33,7 @@ export const usersController = {
       const newUser: UserResponse = await userService().createUser({
         name,
         email,
+        password,
       });
 
       return NextResponse.json(newUser, { status: 201 });
@@ -87,10 +82,10 @@ export const usersController = {
   },
 
   async updateUser(req: NextRequest, res: IUsersResponse) {
-    const { name, email }: UserBody = (await req.json()) as UserBody;
+    const { name, email, password }: UserBody = (await req.json()) as UserBody;
     const userId = res.params.id;
 
-    if (!name || !email) {
+    if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'Name and email are mandatory for update' },
         { status: 400 }
@@ -104,7 +99,7 @@ export const usersController = {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      await userService().updateUser(userId, { name, email });
+      await userService().updateUser(userId, { name, email, password });
 
       return NextResponse.json(
         { message: 'User updated successfully' },

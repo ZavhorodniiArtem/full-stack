@@ -7,7 +7,7 @@ export interface LoginValues {
   password: string;
 }
 
-export default function Login() {
+export default function Signin() {
   const onFinish = (values: LoginValues) => {
     console.log('values', values);
   };

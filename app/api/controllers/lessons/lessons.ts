@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Params } from './constants';
 import { lessonsService } from '@/app/api/services/lessons/lessonsService';
 import { LessonBody } from '@/app/(pages)/lessons/components/LessonModal/types';
-import {
-  ILessons,
-  LessonsResponse,
-} from '@/app/shared/hooks/api/useLessons/types';
-import { IUsersResponse } from '@/app/api/(routes)/users/types';
-import { userService } from '@/app/api/services/users/userService';
+import { ILessons } from '@/app/shared/hooks/api/useLessons/types';
 import { ILessonResponse } from '@/app/api/(routes)/lessons/types';
-import { UserBody } from '@/app/(pages)/users/components/UserModal/types';
+import { extractAndValidateParams } from '@/app/api/services/extractAndValidateParams/extractAndValidateParams';
 
 export const lessonsController = {
   async fetchLessons(req: NextRequest) {
     try {
-      const params = {
-        search: req.nextUrl.searchParams.get(Params.SEARCH),
-        order: req.nextUrl.searchParams.get(Params.ORDER),
-        field: req.nextUrl.searchParams.get(Params.FIELD),
-        pageSize: Number(req.nextUrl.searchParams.get(Params.PAGE_SIZE)),
-        page: Number(req.nextUrl.searchParams.get(Params.PAGE)),
-      };
+      const params = extractAndValidateParams(req);
 
       const lessons = await lessonsService().getAllLessons(params);
 
@@ -43,7 +31,7 @@ export const lessonsController = {
         );
       }
 
-      const newLesson: LessonsResponse = await lessonsService().createLesson({
+      const newLesson: ILessons = await lessonsService().createLesson({
         author,
         description,
         title,

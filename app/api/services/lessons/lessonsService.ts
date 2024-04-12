@@ -1,10 +1,7 @@
 import { queryDB } from '@/app/lib/db';
 import { TableParams } from './types';
-import {
-  ILessons,
-  LessonsResponse,
-} from '@/app/shared/hooks/api/useLessons/types';
-import { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
+import { ILessons } from '@/app/shared/hooks/api/useLessons/types';
+import { ResultSetHeader } from 'mysql2/promise';
 import { LessonBody } from '@/app/(pages)/lessons/components/LessonModal/types';
 
 export function lessonsService() {
@@ -28,12 +25,12 @@ export function lessonsService() {
 
       const values = params.search ? [`%${params.search}%`] : [];
 
-      const lessons = await queryDB<LessonsResponse>({
+      const lessons = await queryDB<ILessons>({
         query: queryString,
         values: values,
       });
 
-      const totalLessons = await queryDB<LessonsResponse>({
+      const totalLessons = await queryDB<{ total: number }>({
         query: 'SELECT COUNT(*) AS total FROM lessons',
         values: [],
       });
@@ -56,16 +53,18 @@ export function lessonsService() {
     },
 
     async getLessonById(id: string | number) {
-      const result = await queryDB<LessonsResponse>({
+      const lesson = await queryDB<ILessons>({
         query: 'SELECT * FROM lessons WHERE id = ?',
         values: [`${id}`],
       });
-      const lesson = result as RowDataPacket[];
-      return lesson.length > 0 ? (lesson[0] as ILessons) : null;
+
+      if (!lesson) return null;
+
+      return lesson;
     },
 
     async createLesson({ author, description, title, link }: LessonBody) {
-      const insertResult = await queryDB<LessonsResponse>({
+      const insertResult = await queryDB<ILessons>({
         query:
           'INSERT INTO lessons (author, description, title, link, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
         values: [author, description, title, link],
@@ -73,7 +72,7 @@ export function lessonsService() {
 
       const { insertId } = insertResult as unknown as ResultSetHeader;
 
-      const newLessonResult = await queryDB<LessonsResponse>({
+      const newLessonResult = await queryDB<ILessons>({
         query: 'SELECT * FROM lessons WHERE id = ?',
         values: [`${insertId}`],
       });
@@ -86,7 +85,7 @@ export function lessonsService() {
     },
 
     updateLesson: async (lessonId: string, data: LessonBody) => {
-      await queryDB<LessonsResponse>({
+      await queryDB<ILessons>({
         query:
           'UPDATE lessons SET author = ?, title = ?, description = ?, link = ? WHERE id = ?',
         values: [
@@ -100,7 +99,7 @@ export function lessonsService() {
     },
 
     async deleteLesson(id: string | undefined) {
-      await queryDB<LessonsResponse>({
+      await queryDB<ILessons>({
         query: 'DELETE FROM lessons WHERE id = ?',
         values: [`${id}`],
       });
@@ -111,7 +110,7 @@ export function lessonsService() {
 
       const query = `DELETE FROM lessons WHERE id IN (${placeholders})`;
 
-      await queryDB<LessonsResponse>({
+      await queryDB<ILessons>({
         query,
         values: ids,
       });

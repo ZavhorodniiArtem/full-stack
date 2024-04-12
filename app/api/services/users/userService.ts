@@ -1,8 +1,13 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { UserBody } from '@/app/(pages)/users/components/UserModal/types';
-import { IUser, UserResponse } from '@/app/shared/hooks/api/useUsers/types';
+import {
+  IUser,
+  IUserWithPass,
+  UserResponse,
+} from '@/app/shared/hooks/api/useUsers/types';
 import { queryDB } from '@/app/lib/db';
 import { TableParams } from './types';
+import bcrypt from 'bcrypt';
 
 export function userService() {
   return {
@@ -25,14 +30,20 @@ export function userService() {
 
       const values = params.search ? [`%${params.search}%`] : [];
 
-      const users = await queryDB<UserResponse>({
+      const users = await queryDB<IUserWithPass>({
         query: queryString,
         values: values,
       });
 
-      const totalUsers = await queryDB<UserResponse>({
+      const totalUsers = await queryDB<{ total: number }>({
         query: 'SELECT COUNT(*) AS total FROM users',
         values: [],
+      });
+
+      const usersWithoutPass: IUser[] = users.map((user) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, ...userWithoutPass } = user;
+        return userWithoutPass;
       });
 
       const pageSize = params?.pageSize || 10;
@@ -42,7 +53,7 @@ export function userService() {
         : null;
 
       return {
-        data: users,
+        data: usersWithoutPass,
         page: params.page || 1,
         totalPages: totalPages,
         pageSize: pageSize,
@@ -53,15 +64,28 @@ export function userService() {
     },
 
     async getUserById(id: string | number) {
-      const result = await queryDB<UserResponse>({
+      const user = await queryDB<IUserWithPass>({
         query: 'SELECT * FROM users WHERE id = ?',
         values: [`${id}`],
       });
-      const user = result as RowDataPacket[];
-      return user.length > 0 ? (user[0] as IUser) : null;
+
+      if (!user) return null;
+
+      return user[0];
     },
 
-    async createUser({ name, email }: UserBody) {
+    async getUserByEmail(email: string) {
+      const user = await queryDB<IUserWithPass>({
+        query: 'SELECT * FROM users WHERE email = ?',
+        values: [email],
+      });
+
+      if (!user) return null;
+
+      return user[0];
+    },
+
+    async createUser({ name, email, password }: UserBody) {
       const result = await queryDB<UserResponse>({
         query: 'SELECT * FROM users WHERE email = ?',
         values: [email],
@@ -72,10 +96,13 @@ export function userService() {
         throw new Error('User with this email already exists');
       }
 
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
       const insertResult = await queryDB<UserResponse>({
         query:
-          'INSERT INTO users (name, email, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-        values: [name, email],
+          'INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+        values: [name, email, hashedPassword],
       });
 
       const { insertId } = insertResult as unknown as ResultSetHeader;
@@ -93,9 +120,13 @@ export function userService() {
     },
 
     updateUser: async (userId: string, data: UserBody) => {
-      await queryDB<UserResponse>({
-        query: 'UPDATE users SET name = ?, email = ? WHERE id = ?',
-        values: [data.name, data.email, userId],
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(data.password, saltRounds);
+
+      await queryDB<IUserWithPass>({
+        query:
+          'UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?',
+        values: [data.name, data.email, hashedPassword, userId],
       });
     },
 

@@ -2,12 +2,12 @@
 
 import { SLink, SLinksList, SSidebar } from './style';
 import { Routes } from '@/app/utils/routes';
-import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 
 const Sidebar = () => {
-  const path = usePathname();
+  const session = useSession();
 
-  //if (path === Routes.LOGIN.toString()) return;
+  console.log('session', session);
 
   return (
     <SSidebar>
@@ -16,7 +16,14 @@ const Sidebar = () => {
         <SLink href={Routes.LESSONS}>Lessons</SLink>
       </SLinksList>
 
-      <SLink href={Routes.LOGIN}>LOGOUT</SLink>
+      {session?.data && (
+        <SLink
+          href='#'
+          onClick={() => signOut({ callbackUrl: Routes.SIGN_IN })}
+        >
+          Sign out
+        </SLink>
+      )}
     </SSidebar>
   );
 };

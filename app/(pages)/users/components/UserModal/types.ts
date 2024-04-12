@@ -9,6 +9,7 @@ export interface UserModalProps {
 export interface UserBody {
   name: string;
   email: string;
+  password: string;
 }
 
 export interface UserParams {
